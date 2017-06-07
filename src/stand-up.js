@@ -1,62 +1,63 @@
 const tinyspeck = require("tinyspeck")
 
-const CHANNEL = "#standup-channel"
 const slack = tinyspeck.instance({ token: process.env.SLACK_TOKEN })
+
+/*
+ * TODO
+ * Ping the channel when the starting a standup
+ * Clear the standup after 5 mins
+ * If a user mentions "help" show some emoji
+ **/
 
 const model = {
   standup: null
 }
 
-/*
- * TODO
- * Make the message you send to standup your reply
- * Ping the channel when the starting a standup
- * If a user mentions "help" show some emoji
- **/
+slack.on("/standup", message => {
+  if (!model.standup) {
+    createStandUp(message).then(viewStandUp)
+  } else {
+    updateStandUp(message).then(viewStandUp)
+  }
+})
 
-slack.on("/standup", data => {
-  const text = `Standup started by ${data.user_name}. \`/report\` your status`
+function createStandUp(message) {
+  const text = "Reply with `/standup [your message]`"
 
-  slack
+  return slack
     .send({
-      channel: CHANNEL,
+      channel: message.channel_id,
       text: text
     })
     .then(data => {
       model.standup = {
-        ts: data.ts,
+        text: text,
         channel: data.channel,
-        initialMessage: text,
-        members: {}
+        timestamp: data.ts,
+        replies: {
+          [message.user_name]: message.text
+        }
       }
     })
-})
+}
 
-slack.on("/report", data => {
-  if (!model.standup) {
-    slack.send(data.response_url, {
-      channel: CHANNEL,
-      text:
-        "I respect your eagerness, but there's no standup going on right now! Start one with `/standup`!"
-    })
-  } else {
-    model.standup.members[data.user_name] = data.text
-    updateStandup(model.standup)
-  }
-})
+function updateStandUp(message) {
+  model.standup.replies[message.user_name] = message.text
+  return Promise.resolve()
+}
 
-function updateStandup(standup) {
-  const members = Object.keys(standup.members).map(member => ({
-    title: member,
-    text: standup.members[member]
+function viewStandUp() {
+  const replies = Object.keys(model.standup.replies).map(user => ({
+    title: user,
+    text: model.standup.replies[user]
   }))
 
-  slack
+  return slack
     .send({
-      ts: standup.ts,
-      channel: standup.channel,
-      text: standup.initialMessage,
-      attachments: members
+      ts: model.standup.timestamp,
+      channel: model.standup.channel,
+      text: model.standup.text,
+      attachments: replies
     })
     .then(data => {
       console.log(data)
