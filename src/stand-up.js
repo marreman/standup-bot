@@ -60,4 +60,4 @@ function viewStandUp() {
   })
 }
 
-slack.listen(6000)
+slack.listen(process.env.PORT || 6000)
