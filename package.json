@@ -2,5 +2,11 @@
   "name": "stand-up",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "start": "node src/stand-up"
+  },
+  "dependencies": {
+    "tinyspeck": "^1.4.1"
+  }
 }
