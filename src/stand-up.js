@@ -4,7 +4,7 @@ const slack = tinyspeck.instance({ token: process.env.SLACK_TOKEN })
 
 /*
  * TODO
- * Ping the channel when the starting a standup
+ * Support multiple channels
  * Clear the standup after 5 mins
  * If a user mentions "help" show some emoji
  **/
@@ -22,7 +22,7 @@ slack.on("/standup", message => {
 })
 
 function createStandUp(message) {
-  const text = "Reply with `/standup [your message]`"
+  const text = "<!channel> reply with `/standup [your message]`"
 
   return slack
     .send({
@@ -52,16 +52,12 @@ function viewStandUp() {
     text: model.standup.replies[user]
   }))
 
-  return slack
-    .send({
-      ts: model.standup.timestamp,
-      channel: model.standup.channel,
-      text: model.standup.text,
-      attachments: replies
-    })
-    .then(data => {
-      console.log(data)
-    })
+  return slack.send({
+    ts: model.standup.timestamp,
+    channel: model.standup.channel,
+    text: model.standup.text,
+    attachments: replies
+  })
 }
 
 slack.listen(6000)
