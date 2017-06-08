@@ -5,22 +5,32 @@ const slack = tinyspeck.instance({ token: process.env.SLACK_TOKEN })
 
 /*
  * TODO
- * Support multiple channels
  * Clear the standup after 5 mins
  * If a user mentions "help" show some emoji
  **/
 
 const model = {
-  standup: null
+  standups: {}
 }
 
 slack.on(command, message => {
-  if (!model.standup) {
-    createStandUp(message).then(viewStandUp)
+  const standup = findStandUp(message, model.standups)
+
+  if (standup) {
+    updateStandUp(message, standup).then(saveStandUp).then(viewStandUp)
   } else {
-    updateStandUp(message).then(viewStandUp)
+    createStandUp(message).then(saveStandUp).then(viewStandUp)
   }
 })
+
+function findStandUp(message, standups) {
+  return standups[message.channel_id]
+}
+
+function saveStandUp(standup) {
+  model.standups[standup.channel] = standup
+  return standup
+}
 
 function createStandUp(message) {
   const text = "<!channel> reply with `/standup [your message]`"
@@ -31,7 +41,7 @@ function createStandUp(message) {
       text: text
     })
     .then(data => {
-      model.standup = {
+      return {
         text: text,
         channel: data.channel,
         timestamp: data.ts,
@@ -42,21 +52,21 @@ function createStandUp(message) {
     })
 }
 
-function updateStandUp(message) {
-  model.standup.replies[message.user_name] = message.text
-  return Promise.resolve()
+function updateStandUp(message, standup) {
+  standup.replies[message.user_name] = message.text
+  return Promise.resolve(standup)
 }
 
-function viewStandUp() {
-  const replies = Object.keys(model.standup.replies).map(user => ({
+function viewStandUp(standup) {
+  const replies = Object.keys(standup.replies).map(user => ({
     title: user,
-    text: model.standup.replies[user]
+    text: standup.replies[user]
   }))
 
   return slack.send({
-    ts: model.standup.timestamp,
-    channel: model.standup.channel,
-    text: model.standup.text,
+    ts: standup.timestamp,
+    channel: standup.channel,
+    text: standup.text,
     attachments: replies
   })
 }
