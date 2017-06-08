@@ -4,9 +4,12 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node src/stand-up"
+    "start": "nodemon src/stand-up"
   },
   "dependencies": {
     "tinyspeck": "^1.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^1.11.0"
   }
 }

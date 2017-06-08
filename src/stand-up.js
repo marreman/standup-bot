@@ -1,4 +1,5 @@
 const tinyspeck = require("tinyspeck")
+const command = process.env.NODE_ENV === "production" ? "/standup" : "/standup-dev"
 
 const slack = tinyspeck.instance({ token: process.env.SLACK_TOKEN })
 
@@ -13,7 +14,7 @@ const model = {
   standup: null
 }
 
-slack.on("/standup", message => {
+slack.on(command, message => {
   if (!model.standup) {
     createStandUp(message).then(viewStandUp)
   } else {
